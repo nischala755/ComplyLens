@@ -1,0 +1,32 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ShieldCheck, TriangleAlert, OctagonAlert, Play, Download, Search, ArrowUpDown, History } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+
+type Assessment={id:string;riskScore:number;status:string;violationCount:number;assessedAt:string};
+type Contact={id:string;name:string;email:string;department?:string;latestAssessment:Assessment|null};
+const statusClass=(s?:string)=>s==="Compliant"?"good":s==="At Risk"?"warn":s==="Non-Compliant"?"bad":"neutral";
+
+export default function DashboardClient(){
+ const[rows,setRows]=useState<Contact[]>([]),[loading,setLoading]=useState(true),[running,setRunning]=useState(false),[q,setQ]=useState(""),[filter,setFilter]=useState("All"),[sort,setSort]=useState<"name"|"score">("name");
+ const load=()=>fetch("/api/contacts").then(r=>r.json()).then(x=>{setRows(x);setLoading(false)});
+ useEffect(()=>{load()},[]);
+ const assessed=rows.filter(r=>r.latestAssessment),compliant=assessed.filter(r=>r.latestAssessment?.status==="Compliant").length,atRisk=assessed.filter(r=>r.latestAssessment?.status==="At Risk").length,critical=assessed.filter(r=>(r.latestAssessment?.riskScore||100)<=49).length;
+ const list=useMemo(()=>rows.filter(r=>(r.name+r.email+(r.department||"")).toLowerCase().includes(q.toLowerCase())&&(filter==="All"||r.latestAssessment?.status===filter)).sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):(b.latestAssessment?.riskScore??-1)-(a.latestAssessment?.riskScore??-1)),[rows,q,filter,sort]);
+ const trend=assessed.map((r,i)=>({name:i+1,score:r.latestAssessment!.riskScore}));
+ const kpis:{Icon:LucideIcon;label:string;value:React.ReactNode;note:string;color:string}[]=[
+  {Icon:ShieldCheck,label:"Compliance rate",value:assessed.length?Math.round(compliant/assessed.length*100)+"%":"—",note:"of assessed contacts",color:"text-emerald-600"},
+  {Icon:TriangleAlert,label:"At risk",value:atRisk,note:"requires attention",color:"text-amber-600"},
+  {Icon:OctagonAlert,label:"Non-compliant",value:critical,note:"critical posture",color:"text-red-600"},
+  {Icon:History,label:"Assessed",value:assessed.length,note:`of ${rows.length} contacts`,color:"text-blue-600"}
+ ];
+ async function scan(){setRunning(true);await fetch("/api/assessments/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({contactIds:rows.map(r=>r.id)})});await load();setRunning(false)}
+ return <>
+  <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-7"><div><p className="label text-teal-700">Compliance command center</p><h1 className="text-3xl font-bold text-[#10233f] mt-2">DPDP posture overview</h1><p className="text-slate-500 mt-2">Evidence-based monitoring across every data principal.</p></div><div className="flex gap-2"><a href="/api/reports" className="btn btn-secondary flex gap-2 items-center"><Download size={16}/>Export report</a><button className="btn btn-primary flex gap-2 items-center" onClick={scan} disabled={running}><Play size={16}/>{running?"Assessing…":"Run all assessments"}</button></div></div>
+  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">{kpis.map(({Icon,label,value,note,color})=><div className="card p-5" key={label}><div className="flex justify-between"><div><p className="label">{label}</p><p className="text-3xl font-bold mt-3 text-[#10233f]">{value}</p><p className="text-xs text-slate-400 mt-2">{note}</p></div><Icon className={color} size={22}/></div></div>)}</div>
+  <div className="grid lg:grid-cols-[1fr_340px] gap-6"><section className="card overflow-hidden"><div className="p-5 flex flex-col md:flex-row gap-3 md:items-center justify-between"><div><h2 className="font-bold text-lg">Contact compliance</h2><p className="text-sm text-slate-500">Latest deterministic assessment</p></div><div className="flex gap-2"><div className="relative"><Search size={15} className="absolute left-3 top-3 text-slate-400"/><input className="input pl-9 py-2" placeholder="Search contacts" value={q} onChange={e=>setQ(e.target.value)}/></div><select className="input py-2 w-36" value={filter} onChange={e=>setFilter(e.target.value)}><option>All</option><option>Compliant</option><option>At Risk</option><option>Non-Compliant</option></select></div></div><div className="overflow-x-auto"><table><thead><tr><th>Contact</th><th>Department</th><th><button className="flex gap-1" onClick={()=>setSort(sort==="score"?"name":"score")}>Score <ArrowUpDown size={13}/></button></th><th>Status</th><th>Violations</th></tr></thead><tbody>{loading?<tr><td colSpan={5}>Loading contacts…</td></tr>:list.map(c=><tr key={c.id} className="hover:bg-slate-50"><td><Link href={`/contacts/${c.id}`} className="font-semibold text-[#143f70]">{c.name}</Link><div className="text-xs text-slate-400">{c.email}</div></td><td>{c.department||"—"}</td><td><span className="text-lg font-bold">{c.latestAssessment?.riskScore??"—"}</span><span className="text-slate-400 text-xs"> / 100</span></td><td><span className={`badge ${statusClass(c.latestAssessment?.status)}`}>{c.latestAssessment?.status||"Not assessed"}</span></td><td>{c.latestAssessment?.violationCount??"—"}</td></tr>)}</tbody></table></div></section>
+  <section className="card p-5"><h2 className="font-bold text-lg">Assessment distribution</h2><p className="text-sm text-slate-500 mb-6">Latest scores by contact</p><div className="h-56">{trend.length?<ResponsiveContainer width="100%" height="100%"><AreaChart data={trend}><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#148f86" stopOpacity={.35}/><stop offset="1" stopColor="#148f86" stopOpacity={0}/></linearGradient></defs><XAxis dataKey="name" tickLine={false}/><YAxis domain={[0,100]} tickLine={false}/><Tooltip/><Area type="monotone" dataKey="score" stroke="#148f86" strokeWidth={3} fill="url(#fill)"/></AreaChart></ResponsiveContainer>:<div className="h-full grid place-items-center text-sm text-slate-400">Run assessments to see score distribution.</div>}</div><div className="border-t mt-5 pt-5"><p className="text-xs text-slate-500 leading-relaxed"><b className="text-slate-700">Decision boundary:</b> Scores and statuses are computed only by the deterministic rule engine. AI cannot alter them.</p></div></section></div>
+ </>
+}

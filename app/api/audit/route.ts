@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {db} from "@/lib/db";
+export async function GET(req:Request){const u=new URL(req.url),page=Math.max(1,Number(u.searchParams.get("page")||1)),eventType=u.searchParams.get("eventType")||undefined;const where=eventType?{eventType}:{};const [items,total]=await Promise.all([db.auditLog.findMany({where,orderBy:{createdAt:"desc"},skip:(page-1)*50,take:50}),db.auditLog.count({where})]);return NextResponse.json({items,total,page,pages:Math.ceil(total/50)})}

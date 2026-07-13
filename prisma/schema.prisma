@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id                       String                 @id @default(cuid())
+  name                     String
+  email                    String                 @unique
+  department               String?
+  dataRetentionEndDate     DateTime?
+  transparencyNoticeGiven  Boolean                @default(false)
+  dataMinimizationStatus   String                 @default("unknown")
+  consentRecords           ConsentRecord[]
+  processingPurposes       ProcessingPurpose[]
+  assessments              ComplianceAssessment[]
+  blastRadiusLinks         BlastRadiusLink[]
+  rightsRequests           RightsRequest[]
+  createdAt                DateTime               @default(now())
+}
+
+model ConsentRecord {
+  id        String    @id @default(cuid())
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+  status    String
+  source    String
+  grantedAt DateTime
+  expiresAt DateTime?
+  purpose   String
+}
+
+model ProcessingPurpose {
+  id          String  @id @default(cuid())
+  contact     Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId   String
+  purpose     String
+  lawfulBasis String
+  active      Boolean @default(true)
+}
+
+model ComplianceRule {
+  id             String                  @id @default(cuid())
+  code           String                  @unique
+  name           String
+  description    String
+  severity       String
+  scoreDeduction Int
+  active         Boolean                 @default(true)
+  versions       ComplianceRuleVersion[]
+}
+
+model ComplianceRuleVersion {
+  id            String         @id @default(cuid())
+  rule          ComplianceRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  ruleId        String
+  version       Int
+  logicSummary  String
+  effectiveFrom DateTime       @default(now())
+  @@unique([ruleId, version])
+}
+
+model ComplianceAssessment {
+  id              String                     @id @default(cuid())
+  contact         Contact                    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId       String
+  riskScore       Int
+  status          String
+  violationCount  Int
+  assessedAt      DateTime                   @default(now())
+  results         ComplianceResult[]
+  recommendations ComplianceRecommendation[]
+  @@index([contactId, assessedAt])
+}
+
+model ComplianceResult {
+  id           String               @id @default(cuid())
+  assessment   ComplianceAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId String
+  ruleCode     String
+  passed       Boolean
+  reasonCode   String
+  detail       String
+}
+
+model ComplianceRecommendation {
+  id                       String               @id @default(cuid())
+  assessment               ComplianceAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId             String
+  action                   String
+  ruleCode                 String
+  expectedScoreImprovement Int
+  priority                 Int
+}
+
+model BlastRadiusLink {
+  id          String  @id @default(cuid())
+  contact     Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId   String
+  type        String
+  name        String
+  impactLevel String
+  description String?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventType String
+  contactId String?
+  actor     String
+  detail    String
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+}
+
+model RightsRequest {
+  id        String   @id @default(cuid())
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+  type      String
+  status    String   @default("open")
+  dueDate   DateTime
+  slaHours  Int
+  createdAt DateTime @default(now())
+}
+
+model IncidentLog {
+  id                 String   @id @default(cuid())
+  occurredAt         DateTime
+  description        String
+  affectedContacts   Int
+  notificationStatus String
+  createdAt          DateTime @default(now())
+}
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  role         String @default("compliance_officer")
+}

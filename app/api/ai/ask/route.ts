@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {explainCompliance} from "@/lib/services/aiExplainer";import {getSession} from "@/lib/auth";
+export async function POST(req:Request){try{const {contactId,question}=await req.json(),s=await getSession();return NextResponse.json({answer:await explainCompliance(contactId,question,`user:${s?.email||"unknown"}`)})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"AI request failed"},{status:400})}}

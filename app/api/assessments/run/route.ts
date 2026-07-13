@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {runAssessment,runBatchAssessment} from "@/lib/services/assessmentService";import {getSession} from "@/lib/auth";
+export async function POST(req:Request){try{const b=await req.json(),s=await getSession(),actor=`user:${s?.email||"unknown"}`;return NextResponse.json(b.contactIds?await runBatchAssessment(b.contactIds,actor):await runAssessment(b.contactId,actor))}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Assessment failed"},{status:400})}}
