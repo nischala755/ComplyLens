@@ -167,6 +167,14 @@ complylens/
 
 ## Compliance rules and scoring
 
+### Legal traceability and score interpretation
+
+Every rule is mapped in the in-app **Rule mapping** register to the relevant DPDP Act section, the statutory requirement, the exact field-level test, and whether the test is a direct statutory mapping or an internal operational proxy. The mapping is captured with each new `ComplianceResult` so an assessment can be interpreted against the rule version used at the time.
+
+`DPDP-001` maps to consent and processing grounds (sections 4, 5, and 6); `DPDP-002` maps to lawful purpose and notice (sections 4 and 5); `DPDP-003` is an operational retention-schedule proxy for the erasure obligation in section 8(7); `DPDP-004` maps to the notice duty in section 5; and `DPDP-005` is explicitly labelled an internal minimization control rather than a standalone statutory DPDP requirement.
+
+The 30/20/20/15/15 deductions and 80/50 status bands are an internal risk-prioritization heuristic, not a statutory penalty formula or legal determination. Consent is weighted highest because it is a primary processing-ground control in this implementation; purpose and retention follow; notice evidence and the internal minimization control are weighted lower. Before real use, the organization should calibrate the weights and bands against expert-labelled cases.
+
 Every contact begins with a score of 100. Failed rules subtract the configured number of points.
 
 | Code | Rule | Severity | Deduction | Deterministic check |
@@ -392,7 +400,7 @@ The Mistral API key is used only on the server. Never prefix it with `NEXT_PUBLI
 6. Sends a strict system prompt and structured JSON context to `mistral-large-latest`.
 7. Writes the returned explanation as an `ai_answer` audit event.
 
-The system prompt forbids Mistral from changing status, inventing facts or scores, and providing legal interpretations beyond the supplied rule descriptions.
+The system prompt forbids Mistral from changing status, inventing facts or scores, and providing legal interpretations beyond the supplied rule descriptions. Assessment JSON is fenced as untrusted data; any instruction-like text inside contact or record fields must be treated as data, never as an instruction.
 
 If `MISTRAL_API_KEY` is absent, assessment, scoring, simulation, reporting, and all non-AI features continue to work. The AI endpoint returns a configuration error.
 
@@ -554,7 +562,7 @@ For a production deployment, use separate development, preview, and production d
 - Use a private repository for real compliance data integrations.
 - Apply least-privilege PostgreSQL credentials in production.
 - Restrict production access at the organization or identity-provider level in addition to application login.
-- Back up the PostgreSQL database and define audit-log retention procedures.
+- `AuditLog` is protected by database triggers that reject `UPDATE` and `DELETE`; the application only inserts audit events. Privileged database administration can still alter schema or bypass controls, so a regulatory-grade deployment should additionally export audit events to separate immutable storage and restrict database-admin access.
 - Treat AI explanations as operational summaries, not legal advice.
 - Have qualified privacy/legal personnel validate rule logic before using the application for real compliance decisions.
 

@@ -50,6 +50,11 @@ model ComplianceRule {
   description    String
   severity       String
   scoreDeduction Int
+  legalReference String
+  legalRequirement String
+  mappingType    String
+  testMethod     String
+  scoringRationale String
   active         Boolean                 @default(true)
   versions       ComplianceRuleVersion[]
 }
@@ -85,6 +90,11 @@ model ComplianceResult {
   passed       Boolean
   reasonCode   String
   detail       String
+  legalReference String
+  legalRequirement String
+  mappingType String
+  testMethod String
+  ruleVersion Int @default(1)
 }
 
 model ComplianceRecommendation {

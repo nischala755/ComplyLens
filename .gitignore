@@ -6,4 +6,8 @@ coverage
 *.log
 *.tsbuildinfo
 .vercel
+.neon
 prisma/dev.db
+
+.vercel
+.env*
