@@ -555,6 +555,18 @@ For a production deployment, use separate development, preview, and production d
 
 ## Security notes
 
+### Remediation and approval workflow
+
+For an open `DPDP-001` finding, the contact view can draft a consent-renewal request. The request is stored as `pending_approval`; a human must explicitly approve it before it can be marked applied. ComplyLens records each draft, approval, rejection, and application event in the audit log. The current release does not email a data principal or create a consent record automatically.
+
+### Decision gating and validation
+
+Scores remain an internal heuristic. A score of 80–100 is no longer sufficient for `Compliant` when an open `High` or `Critical` finding exists: the deterministic engine gates the status to `At Risk` until those findings are resolved. `tests/fixtures/independent-validation-cases.json` contains 30 independently structured acceptance cases. Their labels are an engineering acceptance baseline and must receive formal legal/compliance-expert sign-off before being represented as expert-labelled production evidence.
+
+### Data residency and AI minimization
+
+The deployment uses Neon PostgreSQL and Mistral services whose processing location may be outside India; this needs organization-approved transfer, vendor, and retention review before handling real PII. The AI explainer now receives only assessment score, status, rule metadata, recommendations, and simulation output. It does **not** receive names, emails, departments, or blast-radius record data. The next integration milestone is an approved CRM connector with field mapping, least-privilege OAuth, webhook/audit controls, and a human-approved bulk-remediation queue.
+
 - Rotate any credential that has been pasted into chat, source code, screenshots, or issue trackers.
 - Keep `MISTRAL_API_KEY`, `DATABASE_URL`, `SESSION_SECRET`, and admin credentials server-side.
 - Do not commit `.env` or `.env.local`.

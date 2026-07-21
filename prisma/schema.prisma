@@ -20,6 +20,7 @@ model Contact {
   assessments              ComplianceAssessment[]
   blastRadiusLinks         BlastRadiusLink[]
   rightsRequests           RightsRequest[]
+  remediationRequests     RemediationRequest[]
   createdAt                DateTime               @default(now())
 }
 
@@ -152,4 +153,21 @@ model User {
   email        String @unique
   passwordHash String
   role         String @default("compliance_officer")
+}
+
+model RemediationRequest {
+  id            String   @id @default(cuid())
+  contact       Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId     String
+  ruleCode      String
+  type          String
+  status        String   @default("pending_approval")
+  draftContent  String
+  requestedBy   String
+  approvedBy    String?
+  appliedBy     String?
+  appliedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([contactId, status])
 }
