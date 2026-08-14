@@ -145,7 +145,15 @@ model IncidentLog {
   description        String
   affectedContacts   Int
   notificationStatus String
+  dpbiNotifiedAt     DateTime?
+  principalNotifiedAt DateTime?
   createdAt          DateTime @default(now())
+}
+
+model OrganizationSettings {
+  id        String   @id @default("default")
+  sdfMode   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
 }
 
 model User {

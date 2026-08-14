@@ -1,11 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ShieldCheck, ScrollText, UsersRound, BookOpenCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, ShieldCheck, ScrollText, UsersRound, BookOpenCheck, LogOut, CalendarClock, BriefcaseBusiness, Siren } from "lucide-react";
 
 const links=[
   ["/dashboard","Overview",LayoutDashboard],
   ["/rules","Rule mapping",BookOpenCheck],
+  ["/timeline","Timeline",CalendarClock],
+  ["/dpo","DPO view",BriefcaseBusiness],
+  ["/breaches","Breaches",Siren],
   ["/rights","Rights requests",UsersRound],
   ["/audit","Audit trail",ScrollText]
 ] as const;
