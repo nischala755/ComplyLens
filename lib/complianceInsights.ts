@@ -1,4 +1,4 @@
-export const PENALTY_CRORE:Record<string,number>={"DPDP-001":50,"DPDP-002":50,"DPDP-003":50,"DPDP-004":50,"DPDP-005":50};
+export const PENALTY_CRORE:Record<string,number>={"DPDP-001":50,"DPDP-002":50,"DPDP-003":50,"DPDP-004":50,"DPDP-005":0};
 export const SDF_OBLIGATIONS=["Appoint a Data Protection Officer based in India","Undertake periodic Data Protection Impact Assessments and audits","Implement additional measures prescribed for Significant Data Fiduciaries"];
 export const PHASES=[
  {id:"active",date:"2025-11-13",title:"Foundation rules active",detail:"Rules 1, 2 and 17–21 commenced on publication."},
